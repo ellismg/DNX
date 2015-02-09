@@ -11,7 +11,7 @@ namespace Microsoft.Framework.DesignTimeHost
             = new ResourceManager("Microsoft.Framework.DesignTimeHost.Resources", typeof(Resources).GetTypeInfo().Assembly);
 
         /// <summary>
-        /// Cannot process plugin message. Plugin id '{0}' must have a {1} of '{2}'.
+        /// Cannot process plugin message. Plugin id '{0}' of type '{1}' must be assignable to type '{2}'.
         /// </summary>
         internal static string Plugin_CannotProcessMessageInvalidPluginType
         {
@@ -19,7 +19,7 @@ namespace Microsoft.Framework.DesignTimeHost
         }
 
         /// <summary>
-        /// Cannot process plugin message. Plugin id '{0}' must have a {1} of '{2}'.
+        /// Cannot process plugin message. Plugin id '{0}' of type '{1}' must be assignable to type '{2}'.
         /// </summary>
         internal static string FormatPlugin_CannotProcessMessageInvalidPluginType(object p0, object p1, object p2)
         {

@@ -286,19 +286,16 @@ namespace Microsoft.Framework.DesignTimeHost
                     {
                         var pluginData = message.Payload.ToObject<PluginMessage>();
 
-                        var assemblyLoadContext = new Lazy<IAssemblyLoadContext>(() =>
+                        Project project;
+                        if (!Project.TryGetProject(_appPath.Value, out project))
                         {
-                            Project project;
-                            if (!Project.TryGetProject(_appPath.Value, out project))
-                            {
-                                throw new InvalidOperationException(
-                                    Resources.FormatPlugin_UnableToFindProjectJson(_appPath.Value));
-                            }
+                            throw new InvalidOperationException(
+                                Resources.FormatPlugin_UnableToFindProjectJson(_appPath.Value));
+                        }
 
-                            var loadContextFactory = GetRuntimeLoadContextFactory(project);
+                        var loadContextFactory = GetRuntimeLoadContextFactory(project);
 
-                            return loadContextFactory.Create();
-                        });
+                        var assemblyLoadContext = loadContextFactory.Create();
 
                         _pluginHandler.ProcessMessage(pluginData, assemblyLoadContext);
                     }

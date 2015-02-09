@@ -20,7 +20,7 @@ namespace Microsoft.Framework.DesignTimeHost
         {
             var wrapper = new PluginMessageWrapperData
             {
-                PluginContextId = _pluginId,
+                PluginId = _pluginId,
                 Data = data
             };
 
@@ -29,7 +29,7 @@ namespace Microsoft.Framework.DesignTimeHost
 
         private class PluginMessageWrapperData
         {
-            public int PluginContextId { get; set; }
+            public int PluginId { get; set; }
             public object Data { get; set; }
         }
     }

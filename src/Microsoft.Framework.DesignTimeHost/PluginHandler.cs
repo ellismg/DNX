@@ -14,7 +14,7 @@ namespace Microsoft.Framework.DesignTimeHost
     {
         private readonly Action<object> _sendMessageMethod;
         private readonly IServiceProvider _hostServices;
-        private readonly Dictionary<int, IPlugin> _plugins;
+        private readonly IDictionary<int, IPlugin> _plugins;
 
         public PluginHandler(IServiceProvider hostServices, Action<object> sendMessageMethod)
         {
@@ -23,14 +23,14 @@ namespace Microsoft.Framework.DesignTimeHost
             _plugins = new Dictionary<int, IPlugin>();
         }
 
-        public void ProcessMessage(PluginMessage data, Lazy<IAssemblyLoadContext> assemblyLoadContext)
+        public void ProcessMessage(PluginMessage data, IAssemblyLoadContext assemblyLoadContext)
         {
             switch (data.MessageName)
             {
-                case "Register":
+                case "RegisterPlugin":
                     ProcessRegisterMessage(data, assemblyLoadContext);
                     break;
-                case "Unregister":
+                case "UnregisterPlugin":
                     ProcessUnregisterMessage(data);
                     break;
                 case "PluginMessage":
@@ -66,19 +66,12 @@ namespace Microsoft.Framework.DesignTimeHost
             }
         }
 
-        private IPlugin ProcessRegisterMessage(
-            PluginMessage data,
-            Lazy<IAssemblyLoadContext> assemblyLoadContext)
+        private void ProcessRegisterMessage(PluginMessage data, IAssemblyLoadContext assemblyLoadContext)
         {
             var pluginId = data.PluginId;
-
             var registerData = data.Data.ToObject<PluginRegisterData>();
-
-            // REVIEW: Should we catch errors that result in bad assembly loads/GetTypes?
-            var assembly = assemblyLoadContext.Value.Load(registerData.AssemblyName);
+            var assembly = assemblyLoadContext.Load(registerData.AssemblyName);
             var pluginType = assembly.GetType(registerData.TypeName);
-
-            IPlugin plugin = null;
 
             if (pluginType != null)
             {
@@ -89,19 +82,17 @@ namespace Microsoft.Framework.DesignTimeHost
                     messageBroker: new Lazy<PluginMessageBroker>(
                         () => new PluginMessageBroker(pluginId, _sendMessageMethod)));
 
-                plugin = ActivatorUtilities.CreateInstance(pluginServiceProvider, pluginType) as IPlugin;
+                var plugin = ActivatorUtilities.CreateInstance(pluginServiceProvider, pluginType) as IPlugin;
 
                 if (plugin == null)
                 {
                     throw new InvalidOperationException(
                         Resources.FormatPlugin_CannotProcessMessageInvalidPluginType(
-                            pluginId, nameof(Type), typeof(IPlugin).FullName));
+                            pluginId, pluginType.FullName, typeof(IPlugin).FullName));
                 }
 
                 _plugins[pluginId] = plugin;
             }
-
-            return plugin;
         }
 
         private class PluginServiceProvider : IServiceProvider
@@ -118,14 +109,14 @@ namespace Microsoft.Framework.DesignTimeHost
 
             public object GetService(Type serviceType)
             {
-                if (MessageBrokerTypeInfo.IsAssignableFrom(serviceType.GetTypeInfo()))
+                var hostProvidedService = _hostServices.GetService(serviceType);
+
+                if (hostProvidedService == null && MessageBrokerTypeInfo.IsAssignableFrom(serviceType.GetTypeInfo()))
                 {
                     return _messageBroker.Value;
                 }
-                else
-                {
-                    return _hostServices.GetService(serviceType);
-                }
+
+                return hostProvidedService;
             }
         }
 
