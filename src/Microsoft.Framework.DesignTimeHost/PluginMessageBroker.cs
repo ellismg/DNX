@@ -27,7 +27,8 @@ namespace Microsoft.Framework.DesignTimeHost
             _sendMessageMethod(wrapper);
         }
 
-        private class PluginMessageWrapperData
+        // Internal for testing
+        internal class PluginMessageWrapperData
         {
             public int PluginId { get; set; }
             public object Data { get; set; }
