@@ -79,6 +79,7 @@ namespace Microsoft.Framework.DesignTimeHost
                 // services that can be used to construct an IPlugin.
                 var pluginServiceProvider = new PluginServiceProvider(
                     _hostServices,
+                    assemblyLoadContext,
                     messageBroker: new Lazy<PluginMessageBroker>(
                         () => new PluginMessageBroker(pluginId, _sendMessageMethod)));
 
@@ -98,22 +99,38 @@ namespace Microsoft.Framework.DesignTimeHost
         private class PluginServiceProvider : IServiceProvider
         {
             private static readonly TypeInfo MessageBrokerTypeInfo = typeof(IPluginMessageBroker).GetTypeInfo();
+            private static readonly TypeInfo AssemblyLoadContextTypeInfo = typeof(IAssemblyLoadContext).GetTypeInfo();
             private readonly IServiceProvider _hostServices;
+            private readonly IAssemblyLoadContext _assemblyLoadContext;
             private readonly Lazy<PluginMessageBroker> _messageBroker;
 
-            public PluginServiceProvider(IServiceProvider hostServices, Lazy<PluginMessageBroker> messageBroker)
+            public PluginServiceProvider(
+                IServiceProvider hostServices, 
+                IAssemblyLoadContext assemblyLoadContext,
+                Lazy<PluginMessageBroker> messageBroker)
             {
                 _hostServices = hostServices;
+                _assemblyLoadContext = assemblyLoadContext;
                 _messageBroker = messageBroker;
             }
 
             public object GetService(Type serviceType)
             {
+
                 var hostProvidedService = _hostServices.GetService(serviceType);
 
-                if (hostProvidedService == null && MessageBrokerTypeInfo.IsAssignableFrom(serviceType.GetTypeInfo()))
+                if (hostProvidedService == null)
                 {
-                    return _messageBroker.Value;
+                    var serviceTypeInfo = serviceType.GetTypeInfo();
+
+                    if (MessageBrokerTypeInfo.IsAssignableFrom(serviceTypeInfo))
+                    {
+                        return _messageBroker.Value;
+                    }
+                    else if (AssemblyLoadContextTypeInfo.IsAssignableFrom(serviceTypeInfo))
+                    {
+                        return _assemblyLoadContext;
+                    }
                 }
 
                 return hostProvidedService;

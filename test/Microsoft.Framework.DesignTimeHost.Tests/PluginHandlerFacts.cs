@@ -136,6 +136,33 @@ namespace Microsoft.Framework.DesignTimeHost
         }
 
         [Fact]
+        public void ProcessMessage_RegisterPlugin_CreatesPluginWithAssemblyLoadContext()
+        {
+            var assemblyLoadContext = CreateTestAssemblyLoadContext<AssemblyLoadContextRelayTestPlugin>();
+            var serviceLookups = new Dictionary<Type, object>();
+            var serviceProvider = new TestServiceProvider(serviceLookups);
+            PluginMessageBroker.PluginMessageWrapperData wrappedData = null;
+            var pluginHandler = new PluginHandler(
+                serviceProvider, (data) => wrappedData = (PluginMessageBroker.PluginMessageWrapperData)data);
+            var pluginMessage = new PluginMessage
+            {
+                Data = new JObject
+                {
+                    { "AssemblyName", "CustomAssembly" },
+                    { "TypeName", typeof(AssemblyLoadContextRelayTestPlugin).FullName },
+                },
+                MessageName = "RegisterPlugin",
+                PluginId = 1234
+            };
+
+            pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
+
+            Assert.NotNull(wrappedData);
+            Assert.Equal(1234, wrappedData.PluginId);
+            Assert.Same(assemblyLoadContext, wrappedData.Data);
+        }
+
+        [Fact]
         public void ProcessMessage_RegisterPlugin_DoesNotThrowOnInvalidPluginTypeNames()
         {
             var pluginType = typeof(CreationTestPlugin);
@@ -440,6 +467,16 @@ namespace Microsoft.Framework.DesignTimeHost
                 : base(creationChecker)
             {
                 messageBroker.SendMessage("Created");
+            }
+        }
+
+        private class AssemblyLoadContextRelayTestPlugin : TestPlugin
+        {
+            public AssemblyLoadContextRelayTestPlugin(
+                IPluginMessageBroker messageBroker, 
+                IAssemblyLoadContext assemblyLoadContext)
+            {
+                messageBroker.SendMessage(assemblyLoadContext);
             }
         }
 
