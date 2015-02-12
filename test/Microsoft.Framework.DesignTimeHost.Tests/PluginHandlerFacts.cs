@@ -13,6 +13,8 @@ namespace Microsoft.Framework.DesignTimeHost
 {
     public class PluginHandlerFacts
     {
+        private const string RandomGuidId = "d81b8ad8-306d-474b-b8a9-b25c7f80be7e";
+
         [Fact]
         public void ProcessMessage_RegisterPlugin_CreatesPlugin()
         {
@@ -32,7 +34,7 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(CreationTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
@@ -59,7 +61,7 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(CreationTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
@@ -90,14 +92,14 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(MessageBrokerCreationTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
 
             Assert.True(creationChecker.Created);
             Assert.NotNull(messageBrokerData);
-            Assert.Equal(1234, messageBrokerData.PluginId);
+            Assert.Equal(RandomGuidId, messageBrokerData.PluginId);
             Assert.Equal("Created", messageBrokerData.Data.ToString(), StringComparer.Ordinal);
         }
 
@@ -108,7 +110,7 @@ namespace Microsoft.Framework.DesignTimeHost
             var creationChecker = new PluginTypeCreationChecker();
             PluginMessageBroker.PluginMessageWrapperData messageBrokerData = null;
             var pluginMessageBroker = new PluginMessageBroker(
-                1234, (data) => messageBrokerData = (PluginMessageBroker.PluginMessageWrapperData)data);
+                RandomGuidId, (data) => messageBrokerData = (PluginMessageBroker.PluginMessageWrapperData)data);
             var serviceLookups = new Dictionary<Type, object>
             {
                 { typeof(PluginTypeCreationChecker), creationChecker },
@@ -124,14 +126,14 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(MessageBrokerCreationTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
 
             Assert.True(creationChecker.Created);
             Assert.NotNull(messageBrokerData);
-            Assert.Equal(1234, messageBrokerData.PluginId);
+            Assert.Equal(RandomGuidId, messageBrokerData.PluginId);
             Assert.Equal("Created", messageBrokerData.Data.ToString(), StringComparer.Ordinal);
         }
 
@@ -152,13 +154,13 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(AssemblyLoadContextRelayTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
 
             Assert.NotNull(wrappedData);
-            Assert.Equal(1234, wrappedData.PluginId);
+            Assert.Equal(RandomGuidId, wrappedData.PluginId);
             Assert.Same(assemblyLoadContext, wrappedData.Data);
         }
 
@@ -187,7 +189,7 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", pluginType.FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
@@ -209,10 +211,10 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(InvalidTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var expectedErrorMessage =
-                "Cannot process plugin message. Plugin id '1234' of type " +
+                $"Cannot process plugin message. Plugin id '{RandomGuidId}' of type " +
                 "'Microsoft.Framework.DesignTimeHost.PluginHandlerFacts+InvalidTestPlugin' must be assignable " +
                 "to type 'Microsoft.Framework.DesignTimeHost.IPlugin'.";
 
@@ -235,12 +237,12 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(TestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var unregisterPluginMessage = new PluginMessage
             {
                 MessageName = "UnregisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(registerPluginMessage, assemblyLoadContext);
@@ -256,10 +258,10 @@ namespace Microsoft.Framework.DesignTimeHost
             var unregisterPluginMessage = new PluginMessage
             {
                 MessageName = "UnregisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var expectedErrorMessage =
-                "No plugin with id '1234' has been registered. Cannot unregister plugin.";
+                $"No plugin with id '{RandomGuidId}' has been registered. Cannot unregister plugin.";
 
             var error = Assert.Throws<InvalidOperationException>(
                 () => pluginHandler.ProcessMessage(unregisterPluginMessage, assemblyLoadContext));
@@ -280,14 +282,15 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(TestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var unregisterPluginMessage = new PluginMessage
             {
                 MessageName = "UnregisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
-            var expectedErrorMessage = "No plugin with id '1234' has been registered. Cannot unregister plugin.";
+            var expectedErrorMessage = 
+                $"No plugin with id '{RandomGuidId}' has been registered. Cannot unregister plugin.";
 
             pluginHandler.ProcessMessage(registerPluginMessage, assemblyLoadContext);
             pluginHandler.ProcessMessage(unregisterPluginMessage, assemblyLoadContext);
@@ -316,7 +319,7 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(MessageTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var pluginMessage = new PluginMessage
             {
@@ -325,14 +328,14 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "Data", "Hello Plugin" },
                 },
                 MessageName = "PluginMessage",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
 
             pluginHandler.ProcessMessage(registerPluginMessage, assemblyLoadContext);
             pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext);
 
             Assert.NotNull(messageBrokerData);
-            Assert.Equal(1234, messageBrokerData.PluginId);
+            Assert.Equal(RandomGuidId, messageBrokerData.PluginId);
             var actualMessage = (string)messageBrokerData.Data;
             Assert.Equal("Hello Plugin!", actualMessage, StringComparer.Ordinal);
         }
@@ -350,11 +353,11 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "Data", "Hello Plugin" },
                 },
                 MessageName = "PluginMessage",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var expectedErrorMessage =
-                "Message received for unregistered plugin id '1234'. Plugins must first be registered before they " +
-                "can receive messages.";
+                $"Message received for unregistered plugin id '{RandomGuidId}'. Plugins must first be registered " +
+                "before they can receive messages.";
 
             var error = Assert.Throws<InvalidOperationException>(
                 () => pluginHandler.ProcessMessage(pluginMessage, assemblyLoadContext));
@@ -375,12 +378,12 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "TypeName", typeof(MessageTestPlugin).FullName },
                 },
                 MessageName = "RegisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var unregisterPluginMessage = new PluginMessage
             {
                 MessageName = "UnregisterPlugin",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var pluginMessage = new PluginMessage
             {
@@ -389,11 +392,11 @@ namespace Microsoft.Framework.DesignTimeHost
                     { "Data", "Hello Plugin" },
                 },
                 MessageName = "PluginMessage",
-                PluginId = 1234
+                PluginId = RandomGuidId
             };
             var expectedErrorMessage =
-                "Message received for unregistered plugin id '1234'. Plugins must first be registered before they " +
-                "can receive messages.";
+                $"Message received for unregistered plugin id '{RandomGuidId}'. Plugins must first be registered " +
+                "before they can receive messages.";
 
             pluginHandler.ProcessMessage(registerPluginMessage, assemblyLoadContext);
             pluginHandler.ProcessMessage(unregisterPluginMessage, assemblyLoadContext);

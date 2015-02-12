@@ -14,13 +14,13 @@ namespace Microsoft.Framework.DesignTimeHost
     {
         private readonly Action<object> _sendMessageMethod;
         private readonly IServiceProvider _hostServices;
-        private readonly IDictionary<int, IPlugin> _plugins;
+        private readonly IDictionary<string, IPlugin> _plugins;
 
         public PluginHandler(IServiceProvider hostServices, Action<object> sendMessageMethod)
         {
             _sendMessageMethod = sendMessageMethod;
             _hostServices = hostServices;
-            _plugins = new Dictionary<int, IPlugin>();
+            _plugins = new Dictionary<string, IPlugin>(StringComparer.Ordinal);
         }
 
         public void ProcessMessage(PluginMessage data, IAssemblyLoadContext assemblyLoadContext)

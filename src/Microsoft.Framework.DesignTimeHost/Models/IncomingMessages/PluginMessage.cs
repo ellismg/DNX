@@ -7,7 +7,7 @@ namespace Microsoft.Framework.DesignTimeHost.Models.IncomingMessages
 {
     public class PluginMessage
     {
-        public int PluginId { get; set; }
+        public string PluginId { get; set; }
         public string MessageName { get; set; }
         public JObject Data { get; set; }
     }

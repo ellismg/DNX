@@ -12,7 +12,8 @@ namespace Microsoft.Framework.DesignTimeHost
         public void SendMessage_CallsIntoSendMessageMethod()
         {
             var called = false;
-            var pluginMessageBroker = new PluginMessageBroker(pluginId: 1234, sendMessageMethod: (_) => called = true);
+            var pluginMessageBroker = 
+                new PluginMessageBroker(pluginId: Guid.NewGuid().ToString(), sendMessageMethod: (_) => called = true);
 
             pluginMessageBroker.SendMessage(string.Empty);
 
@@ -23,14 +24,15 @@ namespace Microsoft.Framework.DesignTimeHost
         public void SendMessage_WrapsData()
         {
             PluginMessageBroker.PluginMessageWrapperData calledWith = null;
+            var expectedPluginId = "d81b8ad8-306d-474b-b8a9-b25c7f80be7e"; // Random, hardcoded GUID.
             var pluginMessageBroker = new PluginMessageBroker(
-                pluginId: 1234,
+                expectedPluginId,
                 sendMessageMethod: (data) => calledWith = (PluginMessageBroker.PluginMessageWrapperData)data);
 
             pluginMessageBroker.SendMessage("Hello World");
 
             Assert.NotNull(calledWith);
-            Assert.Equal(1234, calledWith.PluginId);
+            Assert.Equal(expectedPluginId, calledWith.PluginId);
             Assert.Equal("Hello World", (string)calledWith.Data, StringComparer.Ordinal);
         }
     }

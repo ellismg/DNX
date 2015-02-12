@@ -8,9 +8,9 @@ namespace Microsoft.Framework.DesignTimeHost
     public class PluginMessageBroker : IPluginMessageBroker
     {
         private readonly Action<object> _sendMessageMethod;
-        private readonly int _pluginId;
+        private readonly string _pluginId;
 
-        public PluginMessageBroker(int pluginId, Action<object> sendMessageMethod)
+        public PluginMessageBroker(string pluginId, Action<object> sendMessageMethod)
         {
             _pluginId = pluginId;
             _sendMessageMethod = sendMessageMethod;
@@ -30,7 +30,7 @@ namespace Microsoft.Framework.DesignTimeHost
         // Internal for testing
         internal class PluginMessageWrapperData
         {
-            public int PluginId { get; set; }
+            public string PluginId { get; set; }
             public object Data { get; set; }
         }
     }
