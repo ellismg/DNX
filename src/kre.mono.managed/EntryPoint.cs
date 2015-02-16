@@ -21,6 +21,8 @@ public class EntryPoint
         { 
             if (!Debugger.IsAttached)
             {
+                Process currentProc = Process.GetCurrentProcess();
+                Console.WriteLine("Process Id: {0}", currentProc.Id);
                 Console.WriteLine("Waiting for the debugger to attach...");
 
                 while (!Debugger.IsAttached)

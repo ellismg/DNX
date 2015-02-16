@@ -381,6 +381,7 @@ int wmain(int argc, wchar_t* argv[])
         {
             if (!IsDebuggerPresent())
             {
+                ::wprintf_s(L"Process Id: %ld\r\n", GetCurrentProcessId());
                 ::wprintf_s(L"Waiting for the debugger to attach...\r\n");
 
                 // Do not use getchar() like in corerun because it doesn't work well with remote sessions
