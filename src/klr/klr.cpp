@@ -316,13 +316,13 @@ int CallApplicationProcessMain(int argc, wchar_t* argv[])
     DWORD dwFullAppBase = GetFullPathName(data.applicationBase, MAX_PATH, szFullAppBase, nullptr);
     if (!dwFullAppBase)
     {
-        ::wprintf_s(_T("Failed to get full path of application base: %s\r\n"), data.applicationBase);
+        ::_tprintf_s(_T("Failed to get full path of application base: %s\r\n"), data.applicationBase);
         exitCode = 1;
         goto Finished;
     }
     else if (dwFullAppBase > MAX_PATH)
     {
-        ::wprintf_s(_T("Full path of application base is too long\r\n"));
+        ::_tprintf_s(_T("Full path of application base is too long\r\n"));
         exitCode = 1;
         goto Finished;
     }
@@ -332,23 +332,23 @@ int CallApplicationProcessMain(int argc, wchar_t* argv[])
     if (!m_hHostModule)
     {
         if (m_fVerboseTrace)
-            ::wprintf_s(_T("Failed to load: %s\r\n"), pwzHostModuleName);
+            ::_tprintf_s(_T("Failed to load: %s\r\n"), pwzHostModuleName);
         m_hHostModule = nullptr;
         goto Finished;
     }
     if (m_fVerboseTrace)
-        ::wprintf_s(_T("Loaded Module: %s\r\n"), pwzHostModuleName);
+        ::_tprintf_s(_T("Loaded Module: %s\r\n"), pwzHostModuleName);
 
     pfnCallApplicationMain = (FnCallApplicationMain)::GetProcAddress(m_hHostModule, pszCallApplicationMainName);
     if (!pfnCallApplicationMain)
     {
         if (m_fVerboseTrace)
-            ::wprintf_s(_T("Failed to find function %S in %s\n"), pszCallApplicationMainName, pwzHostModuleName);
+            ::_tprintf_s(_T("Failed to find function %S in %s\n"), pszCallApplicationMainName, pwzHostModuleName);
         fSuccess = false;
         goto Finished;
     }
     if (m_fVerboseTrace)
-        printf_s("Found DLL Export: %s\r\n", pszCallApplicationMainName);
+        ::_tprintf_s(_T"Found DLL Export: %s\r\n", pszCallApplicationMainName);
 
     HRESULT hr = pfnCallApplicationMain(&data);
     if (SUCCEEDED(hr))
