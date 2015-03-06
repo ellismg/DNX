@@ -2,13 +2,7 @@
 
 #include "stdafx.h"
 #include "klr.h"
-
-void GetNativeBootstrapperDirectory(LPTSTR szPath)
-{
-    DWORD dirLength = GetModuleFileName(NULL, szPath, MAX_PATH);
-    for (dirLength--; dirLength >= 0 && szPath[dirLength] != _T('\\'); dirLength--);
-    szPath[dirLength + 1] = _T('\0');
-}
+#include "pal.h"
 
 bool LastIndexOfChar(LPCTSTR const pszStr, TCHAR c, size_t* pIndex)
 {
