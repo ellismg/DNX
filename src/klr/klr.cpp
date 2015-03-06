@@ -3,9 +3,9 @@
 #include "stdafx.h"
 #include "klr.h"
 
-void GetModuleDirectory(HMODULE module, LPTSTR szPath)
+void GetNativeBootstrapperDirectory(LPTSTR szPath)
 {
-    DWORD dirLength = GetModuleFileName(module, szPath, MAX_PATH);
+    DWORD dirLength = GetModuleFileName(NULL, szPath, MAX_PATH);
     for (dirLength--; dirLength >= 0 && szPath[dirLength] != _T('\\'); dirLength--);
     szPath[dirLength + 1] = _T('\0');
 }
@@ -260,7 +260,7 @@ int CallApplicationProcessMain(int argc, wchar_t* argv[])
     int exitCode = 0;
 
     TCHAR szCurrentDirectory[MAX_PATH];
-    GetModuleDirectory(NULL, szCurrentDirectory);
+    GetNativeBootstrapperDirectory(szCurrentDirectory);
 
     // Set the DEFAULT_LIB environment variable to be the same directory
     // as the exe
