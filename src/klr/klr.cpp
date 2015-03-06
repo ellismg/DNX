@@ -1,5 +1,3 @@
-// Defines the entry point for the console application.
-
 #include "stdafx.h"
 #include "klr.h"
 #include "pal.h"
@@ -67,11 +65,11 @@ void GetParentDir(LPCTSTR const pszPath, LPTSTR const pszParentDir)
     size_t nLastSeparatorIndex;
     if (!LastPathSeparatorIndex(pszPath, &nLastSeparatorIndex))
     {
-        StringCchCopy(pszParentDir, MAX_PATH, _T("."));
+        _tcscpy_s(pszParentDir, MAX_PATH, _T("."));
         return;
     }
 
-    CopyMemory(pszParentDir, pszPath, (nLastSeparatorIndex + 1) * sizeof(TCHAR));
+    memcpy(pszParentDir, pszPath, (nLastSeparatorIndex + 1) * sizeof(TCHAR));
     pszParentDir[nLastSeparatorIndex + 1] = _T('\0');
 }
 
@@ -81,11 +79,11 @@ void GetFileName(LPCTSTR const pszPath, LPTSTR const pszFileName)
 
     if (!LastPathSeparatorIndex(pszPath, &nLastSeparatorIndex))
     {
-        StringCchCopy(pszFileName, MAX_PATH, pszPath);
+        _tcscpy_s(pszFileName, MAX_PATH, pszPath);
         return;
     }
 
-    StringCchCopy(pszFileName, MAX_PATH, pszPath + nLastSeparatorIndex + 1);
+    _tcscpy_s(pszFileName, MAX_PATH, pszPath + nLastSeparatorIndex + 1);
 }
 
 int BootstrapperOptionValueNum(LPCTSTR pszCandidate)
@@ -157,13 +155,13 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
 
         // Copy the option
         ppszExpandedArgv[nPathArgIndex] = new TCHAR[MAX_PATH];
-        StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
+        _tcscpy_s(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
 
         // Copy the value if the option has one
         if (nOptValNum > 0 && (++nPathArgIndex < nArgc))
         {
             ppszExpandedArgv[nPathArgIndex] = new TCHAR[MAX_PATH];
-            StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
+            _tcscpy_s(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
         }
     }
 
@@ -187,13 +185,13 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     {
         GetParentDir(pszPathArg, szParentDir);
 
-        StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
-        StringCchCopy(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
+        _tcscpy_s(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
+        _tcscpy_s(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
 
         // Copy all arguments/options as is
         for (int i = nPathArgIndex; i < nArgc; ++i)
         {
-            StringCchCopy(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
+            _tcscpy_s(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
         }
 
         return true;
@@ -209,24 +207,26 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     }
     else
     {
-        StringCchCopy(szParentDir, MAX_PATH, pszPathArg);
+        _tcscpy_s(szParentDir, MAX_PATH, pszPathArg);
     }
 
-    StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
-    StringCchCopy(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
-    StringCchCopy(ppszExpandedArgv[nPathArgIndex + 2], MAX_PATH, _T("Microsoft.Framework.ApplicationHost"));
+    _tcscpy_s(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
+    _tcscpy_s(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
+    _tcscpy_s(ppszExpandedArgv[nPathArgIndex + 2], MAX_PATH, _T("Microsoft.Framework.ApplicationHost"));
 
     for (int i = nPathArgIndex + 1; i < nArgc; ++i)
     {
         // Copy all other arguments/options as is
-        StringCchCopy(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
+        _tcscpy_s(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
     }
 
     return true;
 }
 
-int CallApplicationProcessMain(int argc, wchar_t* argv[])
+int CallApplicationProcessMain(int argc, LPTSTR argv[])
 {
+    HRESULT hr = S_OK;
+
     TCHAR szTrace[2];
     DWORD nEnvTraceSize = GetEnvironmentVariable(_T("KRE_TRACE"), szTrace, 2);
     if (nEnvTraceSize == 0)
@@ -243,7 +243,11 @@ int CallApplicationProcessMain(int argc, wchar_t* argv[])
     bool fSuccess = true;
     HMODULE m_hHostModule = nullptr;
 #if CORECLR
+#if PLATFORM_UNIX
+    LPCTSTR pwzHostModuleName = _T("kre.coreclr.so");
+#else
     LPCTSTR pwzHostModuleName = _T("kre.coreclr.dll");
+#endif
 #else
     LPCTSTR pwzHostModuleName = _T("kre.clr.dll");
 #endif
@@ -344,7 +348,7 @@ int CallApplicationProcessMain(int argc, wchar_t* argv[])
     if (m_fVerboseTrace)
         ::_tprintf_s(_T("Found DLL Export: %s\r\n"), pszCallApplicationMainName);
 
-    HRESULT hr = pfnCallApplicationMain(&data);
+    hr = pfnCallApplicationMain(&data);
     if (SUCCEEDED(hr))
     {
         fSuccess = true;
@@ -384,7 +388,11 @@ Finished:
     return exitCode;
 }
 
+#if PLATFORM_UNIX
+int main(int argc, char* argv[])
+#else
 int wmain(int argc, wchar_t* argv[])
+#endif
 {
     // Check for the debug flag before doing anything else
     for (int i = 0; i < argc; i++)

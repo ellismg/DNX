@@ -41,7 +41,6 @@ bool GetTrustedPlatformAssembliesList(const std::string& szDirectory, bool bNati
     CreateTpaBase(&ppszTpaAssemblyNames, &cTpaAssemblyNames, bNative);
 
     //TODO: The Windows version of this actaully ensures the files are present.  We just fail for native and assume MSIL is present
-
     if (bNative)
     {
         return false;
@@ -51,10 +50,10 @@ bool GetTrustedPlatformAssembliesList(const std::string& szDirectory, bool bNati
 
     for (size_t i = 0; i < cTpaAssemblyNames; i++)
     {
-        trustedPlatformAssemblies += szDirectory;
-        trustedPlatformAssemblies += "/";
-        trustedPlatformAssemblies += ppszTpaAssemblyNames[i];
-        trustedPlatformAssemblies += ":";
+        trustedPlatformAssemblies.append(szDirectory);
+        trustedPlatformAssemblies.append("/");
+        trustedPlatformAssemblies.append(ppszTpaAssemblyNames[i]);
+        trustedPlatformAssemblies.append(":");
     }
 
     if (ppszTpaAssemblyNames != NULL)
@@ -65,16 +64,47 @@ bool GetTrustedPlatformAssembliesList(const std::string& szDirectory, bool bNati
     return true;
 }
 
+// TODO: Figure out if runtimeDirectory should have a trailing "/".  Need to look at what happens on Windows.
 void* LoadCoreClr(std::string& runtimeDirectory)
 {
-    runtimeDirectory = std::string(getenv("CORECLR_DIR"));
+    void* ret = nullptr;
 
-    std::string coreClrDllPath;
-    coreClrDllPath += getenv("CORECLR_DIR");
-    coreClrDllPath += "/";
-    coreClrDllPath += "libcoreclr.so";
+    char* coreClrEnvVar = getenv("CORECLR_DIR");
 
-    return dlopen(coreClrDllPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    if (coreClrEnvVar != nullptr)
+    {
+        runtimeDirectory = std::string("CORECLR_DIR");
+        
+        std::string coreClrDllPath = runtimeDirectory;
+        coreClrDllPath.append("/");
+        coreClrDllPath.append("libcoreclr.so");
+        
+        ret = dlopen(coreClrDllPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+    }
+
+    if (ret == nullptr)
+    {
+        // Try to load coreclr from application path.
+        char pathToBootstrapper[PATH_MAX];
+        ssize_t pathLen = readlink("/proc/self/exe", pathToBootstrapper, PATH_MAX - 1);
+
+        if (pathLen != -1)
+        {
+            pathToBootstrapper[pathLen] = '\0';
+            runtimeDirectory.assign(pathToBootstrapper);
+            
+            size_t lastSlash = runtimeDirectory.rfind('/');
+            runtimeDirectory.erase(lastSlash);
+
+            std::string coreClrDllPath = runtimeDirectory;
+            coreClrDllPath.append("/");
+            coreClrDllPath.append("libcoreclr.so");
+        
+            ret = dlopen(coreClrDllPath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+        }
+    }
+
+    return ret;
 }
 
 extern "C" HRESULT CallApplicationMain(PCALL_APPLICATION_MAIN_DATA data)
@@ -89,7 +119,7 @@ extern "C" HRESULT CallApplicationMain(PCALL_APPLICATION_MAIN_DATA data)
     }
     else
     {
-        // TODO: This should get the directory that this library is in.
+        // TODO: This should get the directory that this library is in, not the CWD.
         char szCurrentDirectory[PATH_MAX];
 
         if (getcwd(szCurrentDirectory, PATH_MAX) == NULL)
@@ -132,14 +162,14 @@ extern "C" HRESULT CallApplicationMain(PCALL_APPLICATION_MAIN_DATA data)
     }
 
     // Add the assembly containing the app domain manager to the trusted list
-    trustedPlatformAssemblies += runtimeDirectory;
-    trustedPlatformAssemblies += "kre.coreclr.managed.dll";
+    trustedPlatformAssemblies.append(runtimeDirectory);
+    trustedPlatformAssemblies.append("kre.coreclr.managed.dll");
 
     std::string appPaths(runtimeDirectory);
 
-    appPaths += ":";
-    appPaths += coreClrDirectory;
-    appPaths += ":";
+    appPaths.append(":");
+    appPaths.append(coreClrDirectory);
+    appPaths.append(":");
 
     const char* property_values[] = {
         // APPBASE
@@ -159,10 +189,24 @@ extern "C" HRESULT CallApplicationMain(PCALL_APPLICATION_MAIN_DATA data)
     }
 
     std::string coreClrDllPath(coreClrDirectory);
-    coreClrDllPath += "/";
-    coreClrDllPath += "libcoreclr.so";
+    coreClrDllPath.append("/");
+    coreClrDllPath.append("libcoreclr.so");
 
-    hr = executeAssembly("/home/matell/.k/runtimes/kre-coreclr.1.0.0-dev/bin/klr",
+    // TODO: The PAL needs an path which it can use as the app that is hosting the PAL.  Can this be some dummy thing?
+    // It looked like in some places in the CoreCLR it was hardcoded to just "CoreCLR".
+
+    char pathToBootstrapper[PATH_MAX];
+    ssize_t ret = readlink("/proc/self/exe", pathToBootstrapper, PATH_MAX - 1);
+
+    if (ret == -1)
+    {
+        fprintf(stderr, "Could not locate full bootstrapper path.\n");
+        return E_FAIL;
+    }
+
+    pathToBootstrapper[ret] = '\0';
+
+    hr = executeAssembly(pathToBootstrapper,
                          coreClrDllPath.c_str(),
                          "kre.coreclr.managed",
                          sizeof(property_keys) / sizeof(property_keys[0]),
@@ -180,25 +224,4 @@ extern "C" HRESULT CallApplicationMain(PCALL_APPLICATION_MAIN_DATA data)
     dlclose(coreClr);
 
     return hr;
-}
-
-int main(int argc, char** argv)
-{
-    CALL_APPLICTION_MAIN_DATA callData;
-    callData.applicationBase = "/home/matell/helloworld/bin/Debug/aspnetcore50/";
-    callData.runtimeDirectory = "/home/matell/.k/runtimes/kre-coreclr.1.0.0-dev/bin/";
-    
-    char** strippedArgv = (char**) calloc(argc - 1, sizeof(char*));
-
-    for (int i = 0; i < argc - 1; i++)
-    {
-        strippedArgv[i] = argv[i + 1];
-    }
-
-    callData.argc = argc - 1;
-    callData.argv = strippedArgv;
-
-    CallApplicationMain(&callData);
-
-    return callData.exitcode;
 }
