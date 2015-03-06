@@ -73,7 +73,7 @@ void GetParentDir(LPCTSTR const pszPath, LPTSTR const pszParentDir)
     size_t nLastSeparatorIndex;
     if (!LastPathSeparatorIndex(pszPath, &nLastSeparatorIndex))
     {
-        StringCchCopyW(pszParentDir, MAX_PATH, _T("."));
+        StringCchCopy(pszParentDir, MAX_PATH, _T("."));
         return;
     }
 
@@ -87,11 +87,11 @@ void GetFileName(LPCTSTR const pszPath, LPTSTR const pszFileName)
 
     if (!LastPathSeparatorIndex(pszPath, &nLastSeparatorIndex))
     {
-        StringCchCopyW(pszFileName, MAX_PATH, pszPath);
+        StringCchCopy(pszFileName, MAX_PATH, pszPath);
         return;
     }
 
-    StringCchCopyW(pszFileName, MAX_PATH, pszPath + nLastSeparatorIndex + 1);
+    StringCchCopy(pszFileName, MAX_PATH, pszPath + nLastSeparatorIndex + 1);
 }
 
 int BootstrapperOptionValueNum(LPCTSTR pszCandidate)
@@ -163,13 +163,13 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
 
         // Copy the option
         ppszExpandedArgv[nPathArgIndex] = new TCHAR[MAX_PATH];
-        StringCchCopyW(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
+        StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
 
         // Copy the value if the option has one
         if (nOptValNum > 0 && (++nPathArgIndex < nArgc))
         {
             ppszExpandedArgv[nPathArgIndex] = new TCHAR[MAX_PATH];
-            StringCchCopyW(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
+            StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, ppszArgv[nPathArgIndex]);
         }
     }
 
@@ -193,13 +193,13 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     {
         GetParentDir(pszPathArg, szParentDir);
 
-        StringCchCopyW(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
-        StringCchCopyW(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
+        StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
+        StringCchCopy(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
 
         // Copy all arguments/options as is
         for (int i = nPathArgIndex; i < nArgc; ++i)
         {
-            StringCchCopyW(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
+            StringCchCopy(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
         }
 
         return true;
@@ -215,17 +215,17 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     }
     else
     {
-        StringCchCopyW(szParentDir, MAX_PATH, pszPathArg);
+        StringCchCopy(szParentDir, MAX_PATH, pszPathArg);
     }
 
-    StringCchCopyW(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
-    StringCchCopyW(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
-    StringCchCopyW(ppszExpandedArgv[nPathArgIndex + 2], MAX_PATH, _T("Microsoft.Framework.ApplicationHost"));
+    StringCchCopy(ppszExpandedArgv[nPathArgIndex], MAX_PATH, _T("--appbase"));
+    StringCchCopy(ppszExpandedArgv[nPathArgIndex + 1], MAX_PATH, szParentDir);
+    StringCchCopy(ppszExpandedArgv[nPathArgIndex + 2], MAX_PATH, _T("Microsoft.Framework.ApplicationHost"));
 
     for (int i = nPathArgIndex + 1; i < nArgc; ++i)
     {
         // Copy all other arguments/options as is
-        StringCchCopyW(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
+        StringCchCopy(ppszExpandedArgv[i + 2], MAX_PATH, ppszArgv[i]);
     }
 
     return true;
