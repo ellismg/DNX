@@ -2,7 +2,7 @@
 #include "dnx.h"
 #include "pal.h"
 
-bool LastIndexOfChar(LPCTSTR const pszStr, TCHAR c, size_t* pIndex)
+bool LastIndexOfCharInPath(LPCTSTR const pszStr, TCHAR c, size_t* pIndex)
 {
     size_t nIndex = _tcsnlen(pszStr, MAX_PATH) - 1;
     for (; nIndex != 0; nIndex--)
@@ -22,7 +22,7 @@ bool StringsEqual(LPCTSTR const pszStrA, LPCTSTR const pszStrB)
     return ::_tcsnicmp(pszStrA, pszStrB, MAX_PATH) == 0;
 }
 
-bool StringEndsWith(LPCTSTR const pszStr, LPCTSTR const pszSuffix)
+bool PathEndsWith(LPCTSTR const pszStr, LPCTSTR const pszSuffix)
 {
     size_t nStrLen = _tcsnlen(pszStr, MAX_PATH);
     size_t nSuffixLen = _tcsnlen(pszSuffix, MAX_PATH);
@@ -34,7 +34,7 @@ bool StringEndsWith(LPCTSTR const pszStr, LPCTSTR const pszSuffix)
 
     size_t nOffset = nStrLen - nSuffixLen;
 
-    return StringsEqual(pszStr + nOffset, pszSuffix);
+    return ::_tcsnicmp(pszStr + nOffset, pszSuffix, MAX_PATH - nOffset) == 0;
 }
 
 bool LastPathSeparatorIndex(LPCTSTR const pszPath, size_t* pIndex)
@@ -42,8 +42,8 @@ bool LastPathSeparatorIndex(LPCTSTR const pszPath, size_t* pIndex)
     size_t nLastSlashIndex;
     size_t nLastBackSlashIndex;
 
-    bool hasLastSlashIndex = LastIndexOfChar(pszPath, _T('/'), &nLastSlashIndex);
-    bool hasLastBackSlashIndex = LastIndexOfChar(pszPath, _T('\\'), &nLastBackSlashIndex);
+    bool hasLastSlashIndex = LastIndexOfCharInPath(pszPath, _T('/'), &nLastSlashIndex);
+    bool hasLastBackSlashIndex = LastIndexOfCharInPath(pszPath, _T('\\'), &nLastBackSlashIndex);
 
     if (hasLastSlashIndex && hasLastBackSlashIndex)
     {
@@ -88,20 +88,20 @@ void GetFileName(LPCTSTR const pszPath, LPTSTR const pszFileName)
 
 int BootstrapperOptionValueNum(LPCTSTR pszCandidate)
 {
-    if (StringsEqual(pszCandidate, _T("--appbase")) ||
-        StringsEqual(pszCandidate, _T("--lib")) ||
-        StringsEqual(pszCandidate, _T("--packages")) ||
-        StringsEqual(pszCandidate, _T("--configuration")) ||
-        StringsEqual(pszCandidate, _T("--port")))
+    if (_tcsicmp(pszCandidate, _T("--appbase")) ||
+        _tcsicmp(pszCandidate, _T("--lib")) ||
+        _tcsicmp(pszCandidate, _T("--packages")) ||
+        _tcsicmp(pszCandidate, _T("--configuration")) ||
+        _tcsicmp(pszCandidate, _T("--port")))
     {
         return 1;
     }
-    else if (StringsEqual(pszCandidate, _T("--watch")) ||
-        StringsEqual(pszCandidate, _T("--debug")) ||
-        StringsEqual(pszCandidate, _T("--help")) ||
-        StringsEqual(pszCandidate, _T("-h")) ||
-        StringsEqual(pszCandidate, _T("-?")) ||
-        StringsEqual(pszCandidate, _T("--version")))
+    else if (_tcsicmp(pszCandidate, _T("--watch")) ||
+        _tcsicmp(pszCandidate, _T("--debug")) ||
+        _tcsicmp(pszCandidate, _T("--help")) ||
+        _tcsicmp(pszCandidate, _T("-h")) ||
+        _tcsicmp(pszCandidate, _T("-?")) ||
+        _tcsicmp(pszCandidate, _T("--version")))
     {
         return 0;
     }
@@ -129,7 +129,7 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     for (int i = 0; i < nArgc; ++i)
     {
         // If '--appbase' is already given and it has a value
-        if (StringsEqual(ppszArgv[i], _T("--appbase")) && (i < nArgc - 1))
+        if (_tcsicmp(ppszArgv[i], _T("--appbase")) && (i < nArgc - 1))
         {
             return false;
         }
@@ -181,7 +181,7 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     // "dnx /path/App.dll arg1" --> "dnx --appbase /path/ /path/App.dll arg1"
     // "dnx /path/App.exe arg1" --> "dnx --appbase /path/ /path/App.exe arg1"
     LPTSTR pszPathArg = ppszArgv[nPathArgIndex];
-    if (StringEndsWith(pszPathArg, _T(".exe")) || StringEndsWith(pszPathArg, _T(".dll")))
+    if (PathEndsWith(pszPathArg, _T(".exe")) || PathEndsWith(pszPathArg, _T(".dll")))
     {
         GetParentDir(pszPathArg, szParentDir);
 
@@ -201,7 +201,7 @@ bool ExpandCommandLineArguments(int nArgc, LPTSTR* ppszArgv, int& nExpandedArgc,
     // "dnx /path/ run" --> "dnx --appbase /path/ Microsoft.Framework.ApplicationHost run"
     TCHAR szFileName[MAX_PATH];
     GetFileName(pszPathArg, szFileName);
-    if (StringsEqual(szFileName, _T("project.json")))
+    if (_tcsicmp(szFileName, _T("project.json")))
     {
         GetParentDir(pszPathArg, szParentDir);
     }
@@ -280,7 +280,7 @@ int CallApplicationProcessMain(int argc, LPTSTR argv[])
 
     for (int i = 0; i < data.argc; ++i)
     {
-        if ((i < data.argc - 1) && StringsEqual(data.argv[i], _T("--appbase")))
+        if ((i < data.argc - 1) && _tcsicmp(data.argv[i], _T("--appbase")))
         {
             data.applicationBase = data.argv[i + 1];
         }
@@ -372,7 +372,7 @@ int wmain(int argc, wchar_t* argv[])
     // Check for the debug flag before doing anything else
     for (int i = 0; i < argc; i++)
     {
-        if (StringsEqual(argv[i], _T("--debug")))
+        if (_tcsicmp(argv[i], _T("--debug")))
         {
             WaitForDebuggerToAttach();
         }
