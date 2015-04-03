@@ -29,13 +29,15 @@ var RUNTIME_CLR_WIN_x86_NAME = '${RUNTIME_NAME_PREFIX + "clr-win-x86"}'
 var RUNTIME_CLR_WIN_x64_NAME = '${RUNTIME_NAME_PREFIX + "clr-win-x64"}'
 var RUNTIME_CORECLR_WIN_x86_NAME = '${RUNTIME_NAME_PREFIX + "coreclr-win-x86"}'
 var RUNTIME_CORECLR_WIN_x64_NAME = '${RUNTIME_NAME_PREFIX + "coreclr-win-x64"}'
+var RUNTIME_CORECLR_LINUX_x64_NAME = '${RUNTIME_NAME_PREFIX + "coreclr-linux-x64"}'
 var RUNTIME_MONO_BIN = '${Path.Combine(BUILD_DIR2, RUNTIME_MONO_NAME, "bin")}'
 var RUNTIME_CLR_WIN_x86_BIN = '${Path.Combine(BUILD_DIR2, RUNTIME_CLR_WIN_x86_NAME, "bin")}'
 var RUNTIME_CLR_WIN_x64_BIN = '${Path.Combine(BUILD_DIR2, RUNTIME_CLR_WIN_x64_NAME, "bin")}'
 var RUNTIME_CORECLR_WIN_x86_BIN = '${Path.Combine(BUILD_DIR2, RUNTIME_CORECLR_WIN_x86_NAME, "bin")}'
 var RUNTIME_CORECLR_WIN_x64_BIN = '${Path.Combine(BUILD_DIR2, RUNTIME_CORECLR_WIN_x64_NAME, "bin")}'
+var RUNTIME_CORECLR_LINUX_x64_BIN = '${Path.Combine(BUILD_DIR2, RUNTIME_CORECLR_LINUX_x64_NAME, "bin")}'
 var RUNTIME_CLR_TARGETS = '${new [] {RUNTIME_MONO_BIN, RUNTIME_CLR_WIN_x86_BIN, RUNTIME_CLR_WIN_x64_BIN}}'
-var RUNTIME_CORECLR_TARGETS = '${new [] {RUNTIME_CORECLR_WIN_x86_BIN, RUNTIME_CORECLR_WIN_x64_BIN}}'
+var RUNTIME_CORECLR_TARGETS = '${new [] {RUNTIME_CORECLR_WIN_x86_BIN, RUNTIME_CORECLR_WIN_x64_BIN, RUNTIME_CORECLR_LINUX_x64_BIN}}'
 var ALL_TARGETS = '${RUNTIME_CLR_TARGETS.Concat(RUNTIME_CORECLR_TARGETS)}'
 var NEW_RUNTIME = '${E("NEW_RUNTIME") == "1"}'
 var RUNTIME_COMMON_NAME = 'DNX'
@@ -144,6 +146,10 @@ var RC_FILES = '${FindAllFiles("Resource.rc", BOOTSTRAPPER_EXE_NAME, BOOTSTRAPPE
                 updateText = RegexReplace(updateText, fileVersionStructMatcher, fileVersionStruct);
                 updateText = RegexReplace(updateText, fileVersionValueMatcher, fileVersionValue);
             }
+
+#build-native-linux-bootstrappers
+    exec program='make' workingdir='${Path.Combine(ROOT, "src", BOOTSTRAPPER_EXE_NAME)}'
+    exec program='make' workingdir='${Path.Combine(ROOT, "src", BOOTSTRAPPER_CORECLR_NAME + ".unix")}'
 
 #build-native-bootstrapper .update-rc-files target='native-compile' if='!IsMono'
     var bootstrapperProj = '${Path.Combine(ROOT, "src", BOOTSTRAPPER_EXE_NAME, BOOTSTRAPPER_EXE_NAME + ".vcxproj")}'
@@ -508,11 +514,13 @@ var RC_FILES = '${FindAllFiles("Resource.rc", BOOTSTRAPPER_EXE_NAME, BOOTSTRAPPE
      @{
         var targets = new[]
         {
-            new { TargetFolder = RUNTIME_CLR_WIN_x86_BIN,        Framework = "dnx451",     Arch = "x86",   Mono = false},
-            new { TargetFolder = RUNTIME_CLR_WIN_x64_BIN,        Framework = "dnx451",     Arch = "amd64", Mono = false},
-            new { TargetFolder = RUNTIME_MONO_BIN,               Framework = "dnx451",     Arch = "x86",   Mono = true},
-            new { TargetFolder = RUNTIME_CORECLR_WIN_x86_BIN,    Framework = "dnxcore50", Arch = "x86",   Mono = false},
-            new { TargetFolder = RUNTIME_CORECLR_WIN_x64_BIN,    Framework = "dnxcore50", Arch = "amd64", Mono = false},
+            new { TargetFolder = RUNTIME_CLR_WIN_x86_BIN,        Framework = "dnx451",     Arch = "x86",   Mono = false, ArchPrefix=""},
+            new { TargetFolder = RUNTIME_CLR_WIN_x64_BIN,        Framework = "dnx451",     Arch = "amd64", Mono = false, ArchPrefix=""},
+            new { TargetFolder = RUNTIME_MONO_BIN,               Framework = "dnx451",     Arch = "x86",   Mono = true,  ArchPrefix=""},
+            new { TargetFolder = RUNTIME_CORECLR_WIN_x86_BIN,    Framework = "dnxcore50",  Arch = "x86",   Mono = false, ArchPrefix=""},
+            new { TargetFolder = RUNTIME_CORECLR_WIN_x64_BIN,    Framework = "dnxcore50",  Arch = "amd64", Mono = false, ArchPrefix=""},
+            new { TargetFolder = RUNTIME_CORECLR_WIN_x64_BIN,    Framework = "dnxcore50",  Arch = "amd64", Mono = false, ArchPrefix=""},
+            new { TargetFolder = RUNTIME_CORECLR_LINUX_x64_BIN,  Framework = "dnxcore50",  Arch = "amd64", Mono = true,  ArchPrefix="linux-"},
         };
 
         var runtimeProjects = new[]
@@ -537,7 +545,7 @@ var RC_FILES = '${FindAllFiles("Resource.rc", BOOTSTRAPPER_EXE_NAME, BOOTSTRAPPE
             {
                 continue;
             }
-            var coreclrFolder = Path.Combine(CORECLR_TARGET_PATH, "Runtime", target.Arch);
+            var coreclrFolder = Path.Combine(CORECLR_TARGET_PATH, "Runtime", target.ArchPrefix + target.Arch);
 
             // parse and copy runtime assemblies
             var runtimeAssemblies = new HashSet<string>();
@@ -631,6 +639,10 @@ var RC_FILES = '${FindAllFiles("Resource.rc", BOOTSTRAPPER_EXE_NAME, BOOTSTRAPPE
             InstallDevRuntime(RUNTIME_CLR_WIN_x64_BIN);
             InstallDevRuntime(RUNTIME_CORECLR_WIN_x86_BIN);
             InstallDevRuntime(RUNTIME_CORECLR_WIN_x64_BIN);
+        }
+        else
+        {
+            InstallDevRuntime(RUNTIME_CORECLR_LINUX_x64_BIN);
         }
     }
     
